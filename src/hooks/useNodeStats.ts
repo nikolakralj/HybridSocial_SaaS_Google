@@ -213,11 +213,15 @@ async function fetchPersonStats(
     const viewingMonth = selectedMonth.getMonth();
     const viewingYear = selectedMonth.getFullYear();
     
-    // Get current week start (Monday) for the viewing month
-    const now = new Date();
-    const currentWeekStart = new Date(now);
-    currentWeekStart.setDate(now.getDate() - now.getDay() + 1);
-    currentWeekStart.setHours(0, 0, 0, 0);
+    // Get the first Monday of the viewing month for "current week" calculation
+    // This way "Current Week" = first week of the viewing month, not actual today
+    const viewingMonthStart = new Date(viewingYear, viewingMonth, 1);
+    const firstMonday = new Date(viewingMonthStart);
+    const dayOfWeek = firstMonday.getDay();
+    // If month starts on Monday (1), use it; otherwise find next Monday
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : (8 - dayOfWeek);
+    firstMonday.setDate(firstMonday.getDate() + daysUntilMonday);
+    firstMonday.setHours(0, 0, 0, 0);
     
     let totalHours = 0;
     let currentMonthHours = 0;
@@ -233,11 +237,11 @@ async function fetchPersonStats(
       const weekStart = new Date(period.week_start_date);
       if (weekStart.getMonth() === viewingMonth && weekStart.getFullYear() === viewingYear) {
         currentMonthHours += hours;
-      }
-      
-      // Check if period is in current week (still use actual current week for this)
-      if (weekStart >= currentWeekStart) {
-        currentWeekHours += hours;
+        
+        // Count hours from the first week of the viewing month as "current week"
+        if (weekStart.getTime() === firstMonday.getTime()) {
+          currentWeekHours += hours;
+        }
       }
       
       // Track latest submission
